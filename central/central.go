@@ -130,7 +130,8 @@ func (h *CentralHub) workerDispatcher() {
 			h.mu.Unlock()
 
 			if w == nil {
-				<-h.wReady // if there is a worker and its ready, it will have this channel populatd
+				<-h.wReady // simple semaphore-ish blocking but
+				// this blocks till a worker is registered
 				continue
 			}
 			// payload format :

@@ -23,7 +23,7 @@ type Shell struct {
 func NewShell() (*Shell, error) {
 	cmd := exec.Command("bash", "--noprofile", "--norc")
 
-	ptmx, err := pty.Start()
+	ptmx, err := pty.Start(cmd)
 	if err != nil {
 		return nil, err
 	}

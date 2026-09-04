@@ -8,12 +8,21 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 type ClientOpts struct {
 	Address string
+}
+
+// for eliminating that last line in final output
+
+var commandDoneRe = regexp.MustCompile(`(?m)^.*__COMMAND_DONE_[^\r\n]*\r?\n?`)
+
+func cleanOutput(out string) string {
+	return commandDoneRe.ReplaceAllString(out, "")
 }
 
 func PushJob(opts *ClientOpts, cmd string) (string, int, error) {
@@ -54,6 +63,6 @@ func PushJob(opts *ClientOpts, cmd string) (string, int, error) {
 	if _, err := io.ReadFull(r, outBuf); err != nil {
 		return "", exitCode, fmt.Errorf("read output payload failed: %v", err)
 	}
-
-	return string(outBuf), exitCode, nil
+	out := cleanOutput(string(outBuf))
+	return out, exitCode, nil
 }

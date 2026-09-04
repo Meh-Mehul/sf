@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -11,29 +12,46 @@ import (
 
 func main() {
 	hubFlag := flag.String("hub", "localhost:9999", "central hub address")
-	cmdFlag := flag.String("cmd", "", "command to execute on remote server")
 	flag.Parse()
-
-	targetCmd := *cmdFlag
-	if targetCmd == "" && len(flag.Args()) > 0 {
-		targetCmd = strings.Join(flag.Args(), " ")
-	}
-
-	if targetCmd == "" {
-		fmt.Fprintln(os.Stderr, "Usage: client [-hub <addr>] -cmd \"<command>\" OR client [-hub <addr>] <command...>")
-		os.Exit(1)
-	}
 
 	opts := &client.ClientOpts{
 		Address: *hubFlag,
 	}
 
-	out, code, err := client.PushJob(opts, targetCmd)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(code)
-	}
+	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print(out)
-	os.Exit(code)
+	fmt.Printf("Connected to %s\n", *hubFlag)
+	fmt.Println("Type 'exit' to quit.")
+
+	for {
+		fmt.Print("> ")
+
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error reading input:", err)
+			os.Exit(1)
+		}
+
+		command := strings.TrimSpace(line)
+
+		if command == "" {
+			continue
+		}
+
+		if command == "exit" {
+			break
+		}
+
+		out, code, err := client.PushJob(opts, command)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			continue
+		}
+
+		fmt.Print(out)
+
+		if code != 0 {
+			fmt.Printf("[exit code: %d]\n", code)
+		}
+	}
 }
